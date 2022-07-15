@@ -8,4 +8,77 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+@if (User.Identity != null && User.Identity.IsAuthenticated)
+{
+<div>
+    <div class="row">
+        <div>Joined as: <b> @User.Identity?.Name</b></div>
+        <hr />
+        <div class="row">
+            <div class="">
+                <ul id="messageList" class="list-group list-group-flush"></ul>
+            </div>
+        </div>
+        <hr />
+    </div>
+    <div>
+        <form>
+            <div class="row">
+                <div class="col-10">
+                    <textarea rows="1" draggable="false" type="text" id="message" class="form-control"
+                              autocomplete="off" autofocus placeholder="Type your message here..."></textarea>
+                </div>
+                <div class="col-2">
+                    <input type="submit" id="sendButton" class="btn btn-success" value="Send" />
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+}
+<script src="~/js/signalr/dist/browser/signalr.js"></script>
+<script>
+    "use strict";
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chathub").build();
 
+    connection.on("ReceiveMessage", function (username, message) {
+        var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        var myName = @Html.Raw(Json.Serialize(User.Identity?.Name));
+        var encodedMsg = "<strong>" + (myName == username ? "Me" : username) + "</strong>" + ": " + message;
+        var li = document.createElement("li");
+        li.className = "list-group-item";
+        li.innerHTML = encodedMsg;
+        document.getElementById("messageList").appendChild(li);
+    });
+
+    connection.on("JoinedMessage", function (username) {
+        var myName = @Html.Raw(Json.Serialize(User.Identity?.Name));
+        if (myName) {
+            var joinedMsg = "<div style='opacity:0.6' class='text-center'>" + username + " joined the chat room</div>";
+            var li = document.createElement("li");
+            li.className = "list-group-item";
+            li.innerHTML = joinedMsg;
+            document.getElementById("messageList").appendChild(li);
+        }
+    });
+
+    connection.start().then(function () {
+        connection.invoke("SendJoinedMessage").then(function () {
+        })
+            .catch(function (err) {
+                console.log(err);
+            });
+    });
+
+    document.getElementById("sendButton")
+        .addEventListener("click", function (evt) {
+            var msg = document.getElementById("message").value;
+            connection.invoke("SendMessage", msg).then(function () {
+                document.getElementById("message").value = "";
+            })
+                .catch(function (err) {
+                    console.log(err);
+                });
+            evt.preventDefault();
+        });
+</script>
