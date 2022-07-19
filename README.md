@@ -9,7 +9,7 @@ A Chat Application written in .Net 6
 
 ### Requirements
 
-* You need to have Docker or RabbitMQ installed on your computer.
+* You need to have Docker or the .Net CLI and RabbitMQ installed on your computer.
 * The application uses SQLite so no database installation is required.
 
 ### Notes
@@ -19,6 +19,9 @@ Some other things were not setup for docker. So I advise you have RabbitMQ insta
 ### Installing
 
 * Clone the project
+* Open the /ChatApp folder on a terminal
+* Run ``` dotnet ef database update ``` to create the database
+
 ### Executing program
 
 * Open the /ChatApp folder on a terminal.
