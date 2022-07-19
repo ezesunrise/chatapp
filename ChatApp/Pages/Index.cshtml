@@ -1,50 +1,68 @@
 ﻿@page
 @model IndexModel
+@inject IConfiguration configuration;
 @{
     ViewData["Title"] = "Home page";
+
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">@AppConsts.APP_NAME</h1>
 </div>
 @if (User.Identity != null && User.Identity.IsAuthenticated)
 {
-<div>
-    <div class="row">
-        <div>Joined as: <b> @User.Identity?.Name</b></div>
-        <hr />
-        <div class="row">
-            <div class="">
-                <ul id="messageList" class="list-group list-group-flush"></ul>
-            </div>
-        </div>
-        <hr />
-    </div>
     <div>
-        <form>
+        <div class="row">
+            <div>Joined as: <b> @User.Identity?.Name</b></div>
+            <hr />
+
             <div class="row">
-                <div class="col-10">
-                    <textarea rows="1" draggable="false" type="text" id="message" class="form-control"
-                              autocomplete="off" autofocus placeholder="Type your message here..."></textarea>
-                </div>
-                <div class="col-2">
-                    <input type="submit" id="sendButton" class="btn btn-success" value="Send" />
+                <div class="">
+                    <ul id="messageList" class="list-group list-group-flush">
+                        @foreach (var item in Model.Chat)
+                        {
+                            <li class="list-group-item">
+                                <strong>@(User.Identity?.Name == item.Owner ? "Me" : item.Owner)</strong>: @item.Content &nbsp;
+                                <em>(@item.TimeStamp.ToString("g"))</em>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
-        </form>
+            <hr />
+        </div>
+        <div>
+            <form>
+                <div class="row">
+                    <div class="col-10">
+                        <input type="text" id="message" class="form-control"
+                                  autocomplete="off" autofocus placeholder="Type your message here..." />
+                    </div>
+                    <div class="col-2">
+                        <input type="submit" id="sendButton" class="btn btn-success" value="Send" />
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 }
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
 <script>
     "use strict";
-    var connection = new signalR.HubConnectionBuilder().withUrl("/chathub").build();
+    var connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chathub")
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
 
-    connection.on("ReceiveMessage", function (username, message) {
-        var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    connection.on("ReceiveMessage", function (messageObj) {
+        var msg = messageObj.content.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
+            return '&#' + i.charCodeAt(0) + ';';
+        });
         var myName = @Html.Raw(Json.Serialize(User.Identity?.Name));
-        var encodedMsg = "<strong>" + (myName == username ? "Me" : username) + "</strong>" + ": " + message;
+        var encodedMsg = "<strong>" + (myName == messageObj.owner ? "Me" : messageObj.owner) + "</strong>" + ": " + msg;
+        var date = new Date(messageObj.timeStamp);
+        encodedMsg += "&nbsp;<em>(" + date.toLocaleString("en-GB") + ")</em>";
         var li = document.createElement("li");
         li.className = "list-group-item";
         li.innerHTML = encodedMsg;
@@ -73,12 +91,13 @@
     document.getElementById("sendButton")
         .addEventListener("click", function (evt) {
             var msg = document.getElementById("message").value;
-            connection.invoke("SendMessage", msg).then(function () {
-                document.getElementById("message").value = "";
-            })
+            connection.invoke("SendMessage", msg)
+                .then(function () {
+                })
                 .catch(function (err) {
                     console.log(err);
                 });
+            document.getElementById("message").value = "";
             evt.preventDefault();
         });
 </script>
