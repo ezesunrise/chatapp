@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
+using ChatApp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +22,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-builder.Services.AddScoped<Hub<IChatHub>, ChatHub>();
+//builder.Services.AddScoped<Hub<IChatHub>, ChatHub>();
 
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
@@ -41,7 +42,7 @@ else
     //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -65,7 +66,7 @@ consumer.Received += (model, eventArgs) =>
 
     using var scope = app.Services.CreateScope();
     var chatHub = scope.ServiceProvider.GetRequiredService<IHubContext<ChatHub, IChatHub>>();
-    chatHub.Clients.All.ReceiveMessage(new ChatApp.Pages.MessageModel { Content = "This is the price", TimeStamp = DateTime.Now, Owner = "ChatBot"});
+    chatHub.Clients.All.ReceiveMessage(new ChatApp.Pages.MessageModel { Content = message.Trim('\"'), TimeStamp = DateTime.Now, Owner = AppConsts.CHAT_BOT_NAME});
 };
 channel.BasicConsume(queue: "stockQuotes", autoAck: true, consumer: consumer);
 #endregion

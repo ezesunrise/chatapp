@@ -27,6 +27,12 @@ namespace ChatApp.Data.Repository
                 .Reverse()
                 .ToListAsync();
         }
+
+        public async Task AddAsync(Message newMessage)
+        {
+            await _dbContext.Messages.AddAsync(newMessage);
+            await _dbContext.SaveChangesAsync(); // This should be in a UOW but added it here for simplicity.
+        }
     }
 }
 

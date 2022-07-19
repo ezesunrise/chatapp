@@ -27,7 +27,7 @@ public class IndexModel : PageModel
                 Id = x.Id,
                 Content = x.Content,
                 TimeStamp = x.TimeStamp,
-                Owner = x.Owner.UserName ?? "Chat Bot"
+                Owner = x.Owner.UserName
             })
             .ToList();
     }

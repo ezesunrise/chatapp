@@ -59,8 +59,8 @@
         var msg = messageObj.content.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
             return '&#' + i.charCodeAt(0) + ';';
         });
-        var myName = @Html.Raw(Json.Serialize(User.Identity?.Name));
-        var encodedMsg = "<strong>" + (myName == messageObj.owner ? "Me" : messageObj.owner) + "</strong>" + ": " + msg;
+        var isMe = @Html.Raw(Json.Serialize(User.Identity?.Name)) == messageObj.owner;
+        var encodedMsg = "<strong>" + (isMe ? "Me" : messageObj.owner) + "</strong>" + ": " + msg;
         var date = new Date(messageObj.timeStamp);
         encodedMsg += "&nbsp;<em>(" + date.toLocaleString("en-GB") + ")</em>";
         var li = document.createElement("li");
@@ -81,11 +81,14 @@
     });
 
     connection.start().then(function () {
-        connection.invoke("SendJoinedMessage").then(function () {
-        })
-            .catch(function (err) {
-                console.log(err);
-            });
+        var myName = @Html.Raw(Json.Serialize(User.Identity?.Name));
+        if (myName) {
+            connection.invoke("SendJoinedMessage").then(function () {
+            })
+                .catch(function (err) {
+                    console.log(err);
+                });
+        }
     });
 
     document.getElementById("sendButton")
